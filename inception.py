@@ -40,12 +40,13 @@ def prepare_inception_model(weight_path, use_cuda, mode='feature'):
     return model
 
 def forward_videos(model, dataloader, use_cuda):
+    softmax = torch.nn.Softmax()
     outputs = []
     with torch.no_grad():
         for videos in tqdm(iter(dataloader), 'forwarding...'):
             videos = videos.cuda() if use_cuda else videos
             inputs = Variable(videos.float())
-            output = model(inputs)
+            output = softmax(model(inputs))
             outputs.append(output.data.cpu().numpy())
 
     return outputs
@@ -74,7 +75,6 @@ def main():
     outputs = np.stack(outputs)
     dim_vector = outputs.shape[-1]
     outputs = outputs.reshape(-1, dim_vector)
-    print(outputs.shape)
 
     # save the outputs as .npy
     args.save_path.mkdir(parents=True, exist_ok=True)
