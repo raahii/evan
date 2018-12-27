@@ -1,4 +1,6 @@
+.python-version
 __pycache__
 *.pyc
 weights/*
 !.gitkeep
+notebooks

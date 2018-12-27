@@ -1,8 +1,85 @@
+import sys, time
 import argparse
+from pathlib import Path
 
 import torch
+from torch.utils.data import Dataset, DataLoader
+
+from collections import OrderedDict
+import numpy as np
+import skvideo.io
+import cv2
 
 from models import resnet
+
+def scale(video, size):
+    _, h, w, _ = video.shape
+
+    if (w <= h and w == size) or (h <= w and h == size):
+        return video
+    if w < h:
+        ow, oh = size, int(size * h / w)
+    else:
+        oh, ow = size, int(size * w / h)
+    
+    return np.stack([cv2.resize(img, (oh, ow)) for img in video[...,::-1]])
+
+def center_crop(video, crop_w, crop_h):
+    t, h, w, c = video.shape
+    start_w = w//2 - crop_w//2
+    start_h = h//2 - crop_h//2
+
+    return video[:, start_h:start_h+crop_h, start_w:start_w+crop_w, :]
+
+def normalize(video, mean, std):
+    return (video - mean) / std
+
+def loop_padding(video, length):
+    vlen = len(video)
+    if vlen >= length:
+        return video
+    
+    tile_shape = [1] * video.ndim
+    tile_shape[0] = length // vlen + 1
+    video = np.tile(video, tile_shape)
+    video = video[:length]
+    
+    return video
+
+def temporal_center_crop(video, length):
+    if len(video) <= length:
+        return video
+
+    start = len(video)//2 - length//2
+
+    return video[start:start+length]
+
+class VideoDataet(Dataset):
+    length = 16
+    size   = 112
+    mean   = [114.7748, 107.7354, 99.4750]
+    std    = [1,1,1]
+    def __init__(self, root_path):
+        self.video_paths = list(root_path.glob("**/*.mp4"))
+
+    def __len__(self):
+        return len(self.video_paths)
+
+    def __getitem__(self, i):
+        path = self.video_paths[i]
+        videogen = skvideo.io.vreader(str(path))
+        video = np.stack([frame for frame in videogen])
+        
+        video = scale(video, self.size)
+        video = center_crop(video, self.size, self.size)
+        video = normalize(video, self.mean, self.std)
+
+        if len(video) > self.length:
+            video = temporal_center_crop(video, self.length)
+        elif len(video) < self.length:
+            video = loop_padding(video, self.length)
+
+        return video
 
 def prepare_inception_model(weight_path, gpu, mode='feature'):
     if mode not in ['score', 'feature']:
@@ -19,19 +96,34 @@ def prepare_inception_model(weight_path, gpu, mode='feature'):
     else:
         model_data = torch.load(weight_path, map_location='cpu')
     
-    model.load_state_dict(model_data['state_dict'])
+    fixed_model_data = OrderedDict()
+    for key, value in model_data['state_dict'].items():
+        new_key = key.replace('module.', '')
+        fixed_model_data[new_key] = value
+
+    model.load_state_dict(fixed_model_data)
     model.eval()
 
     return model
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--weight", '-w', default="weights/resnet-34-kinetics-ucf101_split1.pth")
+    parser.add_argument("--weight", '-w', default="weights/resnet-34-kinetics.pth")
     parser.add_argument("--gpu", '-g', default="-1")
+    parser.add_argument("--batchsize", '-b', type=int, default='32')
+    parser.add_argument("result_dir", type=Path)
     args = parser.parse_args()
     
     model = prepare_inception_model(args.weight, args.gpu)
-    print(model)
+    
+    dataset = VideoDataet(args.result_dir)
+    dataloader = DataLoader(dataset, batch_size=args.batchsize)
+
+    print(len(dataset))
+    s = time.time()
+    for videos in iter(dataloader):
+        print(videos.shape)
+    print(time.time()-s, '[s]')
 
 if __name__=="__main__":
     main()
