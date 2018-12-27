@@ -59,16 +59,21 @@ class VideoDataet(Dataset):
 
     def __getitem__(self, i):
         path = self.video_paths[i]
+
+        # read video
         videogen = skvideo.io.vreader(str(path))
         video = np.stack([frame for frame in videogen])
         
+        # spatial transforms
         video = scale(video, self.size)
         video = center_crop(video, self.size, self.size)
         video = normalize(video, self.mean, self.std)
-
-        if len(video) > self.length:
-            video = temporal_center_crop(video, self.length)
-        elif len(video) < self.length:
-            video = loop_padding(video, self.length)
+        
+        # temporal transforms
+        video = temporal_center_crop(video, self.length)
+        video = loop_padding(video, self.length)
+        
+        # (T, H, W, C) -> (C, T, H, W)
+        video = video.transpose(3, 0, 1, 2)
 
         return video

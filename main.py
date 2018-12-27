@@ -4,13 +4,15 @@ from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
+from torch.autograd import Variable
 
 from collections import OrderedDict
+import numpy as np
 
 from dataset import VideoDataet
 from models import resnet
 
-def prepare_inception_model(weight_path, gpu, mode='feature'):
+def prepare_inception_model(weight_path, use_cuda, mode='feature'):
     if mode not in ['score', 'feature']:
         raise ValueError
 
@@ -19,7 +21,7 @@ def prepare_inception_model(weight_path, gpu, mode='feature'):
                             sample_size=112, sample_duration=16,
                             last_fc=last_fc)
 
-    if torch.cuda.is_available():
+    if use_cuda:
         model.cuda()
         model_data = torch.load(weight_path)
     else:
@@ -35,24 +37,44 @@ def prepare_inception_model(weight_path, gpu, mode='feature'):
 
     return model
 
+def forward_videos(model, dataloader, use_cuda):
+    outputs = []
+    with torch.no_grad():
+        for i, videos in enumerate(dataloader):
+            videos = videos.cuda() if use_cuda else videos
+            inputs = Variable(videos.float())
+            output = model(inputs)
+            outputs.append(output.data.cpu().numpy())
+
+    return outputs
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--weight", '-w', default="weights/resnet-34-kinetics.pth")
-    parser.add_argument("--gpu", '-g', default="-1")
     parser.add_argument("--batchsize", '-b', type=int, default='32')
     parser.add_argument("result_dir", type=Path)
+    parser.add_argument("save_path", type=Path)
     args = parser.parse_args()
-    
-    model = prepare_inception_model(args.weight, args.gpu)
-    
-    dataset = VideoDataet(args.result_dir)
-    dataloader = DataLoader(dataset, batch_size=args.batchsize)
 
-    print(len(dataset))
-    s = time.time()
-    for videos in iter(dataloader):
-        print(videos.shape)
-    print(time.time()-s, '[s]')
+    use_cuda = torch.cuda.is_available()
+    
+    # init model and load pretrained weights
+    model = prepare_inception_model(args.weight, use_cuda)
+    
+    # load generated samples as pytorch dataset
+    dataset = VideoDataet(args.result_dir)
+    dataloader = DataLoader(dataset, batch_size=args.batchsize,
+                            pin_memory=False)
+
+    # forward samples to the model and obtain results
+    outputs = forward_videos(model, dataloader, use_cuda)
+    outputs = np.stack(outputs)
+    print(outputs.shape)
+
+    # save the outputs as .npy
+    args.save_path.mkdir(parents=True, exist_ok=True)
+    path = args.save_path / "embeddings"
+    np.save(str(path), outputs)
 
 if __name__=="__main__":
     main()
