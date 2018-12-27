@@ -9,8 +9,7 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
 from collections import OrderedDict
-import numpy as np
-
+import numpy as np 
 from dataset import VideoDataet
 from models import resnet
 
@@ -53,7 +52,7 @@ def forward_videos(model, dataloader, use_cuda):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--weight", '-w', default="weights/resnet-34-kinetics.pth")
+    parser.add_argument("--weight", '-w', default="models/weights/resnet-34-kinetics.pth")
     parser.add_argument("--batchsize", '-b', type=int, default='32')
     parser.add_argument("--mode", '-m', choices=['score', 'feature'], default='feature')
     parser.add_argument("result_dir", type=Path)

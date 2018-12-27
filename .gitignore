@@ -1,7 +1,8 @@
 .python-version
 __pycache__
 *.pyc
-weights/*
+notebooks
+
+models/weights/*
 results/*
 !.gitkeep
-notebooks
