@@ -1,6 +1,8 @@
 import sys, time
 import argparse
 from pathlib import Path
+import inflection
+from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
@@ -40,7 +42,7 @@ def prepare_inception_model(weight_path, use_cuda, mode='feature'):
 def forward_videos(model, dataloader, use_cuda):
     outputs = []
     with torch.no_grad():
-        for i, videos in enumerate(dataloader):
+        for videos in tqdm(iter(dataloader), 'forwarding...'):
             videos = videos.cuda() if use_cuda else videos
             inputs = Variable(videos.float())
             output = model(inputs)
@@ -52,6 +54,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--weight", '-w', default="weights/resnet-34-kinetics.pth")
     parser.add_argument("--batchsize", '-b', type=int, default='32')
+    parser.add_argument("--mode", '-m', choices=['score', 'feature'], default='feature')
     parser.add_argument("result_dir", type=Path)
     parser.add_argument("save_path", type=Path)
     args = parser.parse_args()
@@ -59,7 +62,7 @@ def main():
     use_cuda = torch.cuda.is_available()
     
     # init model and load pretrained weights
-    model = prepare_inception_model(args.weight, use_cuda)
+    model = prepare_inception_model(args.weight, use_cuda, args.mode)
     
     # load generated samples as pytorch dataset
     dataset = VideoDataet(args.result_dir)
@@ -69,11 +72,13 @@ def main():
     # forward samples to the model and obtain results
     outputs = forward_videos(model, dataloader, use_cuda)
     outputs = np.stack(outputs)
+    dim_vector = outputs.shape[-1]
+    outputs = outputs.reshape(-1, dim_vector)
     print(outputs.shape)
 
     # save the outputs as .npy
     args.save_path.mkdir(parents=True, exist_ok=True)
-    path = args.save_path / "embeddings"
+    path = args.save_path / inflection.pluralize(args.mode)
     np.save(str(path), outputs)
 
 if __name__=="__main__":
