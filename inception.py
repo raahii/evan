@@ -39,7 +39,7 @@ def prepare_inception_model(weight_path, use_cuda, mode='feature'):
     return model
 
 def forward_videos(model, dataloader, use_cuda):
-    softmax = torch.nn.Softmax()
+    softmax = torch.nn.Softmax(dim=1)
     outputs = []
     with torch.no_grad():
         for videos in tqdm(iter(dataloader), 'forwarding...'):
@@ -53,7 +53,7 @@ def forward_videos(model, dataloader, use_cuda):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--weight", '-w', default="models/weights/resnet-34-kinetics.pth")
-    parser.add_argument("--batchsize", '-b', type=int, default='32')
+    parser.add_argument("--batchsize", '-b', type=int, default='10')
     parser.add_argument("--mode", '-m', choices=['score', 'feature'], default='feature')
     parser.add_argument("result_dir", type=Path)
     parser.add_argument("save_path", type=Path)
@@ -66,14 +66,14 @@ def main():
     
     # load generated samples as pytorch dataset
     dataset = VideoDataet(args.result_dir)
+    print(f"{len(dataset)} samples found!")
     dataloader = DataLoader(dataset, batch_size=args.batchsize,
+                            num_workers=4,
                             pin_memory=False)
 
     # forward samples to the model and obtain results
     outputs = forward_videos(model, dataloader, use_cuda)
-    outputs = np.stack(outputs)
-    dim_vector = outputs.shape[-1]
-    outputs = outputs.reshape(-1, dim_vector)
+    outputs = np.concatenate(outputs, axis=0)
 
     # save the outputs as .npy
     args.save_path.mkdir(parents=True, exist_ok=True)
