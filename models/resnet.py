@@ -100,9 +100,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, sample_size, sample_duration, shortcut_type='B', num_classes=400, last_fc=True):
-        self.last_fc = last_fc
-
+    def __init__(self, block, layers, sample_size, sample_duration, shortcut_type='B', num_classes=400):
         self.inplanes = 64
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv3d(3, 64, kernel_size=7, stride=(1, 2, 2),
@@ -163,10 +161,8 @@ class ResNet(nn.Module):
         x = self.avgpool(x)
 
         x = x.view(x.size(0), -1)
-        if self.last_fc:
-            x = self.fc(x)
 
-        return x
+        return x, self.fc(x)
 
 
 def get_fine_tuning_parameters(model, ft_begin_index):
