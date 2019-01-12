@@ -60,6 +60,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--weight", '-w', default="models/weights/resnet-101-kinetics-ucf101_split1.pth")
     parser.add_argument("--batchsize", '-b', type=int, default='10')
+    parser.add_argument("--n_workers", '-n', type=int, default=4)
     parser.add_argument("result_dir", type=Path)
     parser.add_argument("save_path", type=Path)
     args = parser.parse_args()
@@ -73,11 +74,11 @@ def main():
     dataset = VideoDataet(args.result_dir)
     print(f"{len(dataset)} samples found!")
     dataloader = DataLoader(dataset, batch_size=args.batchsize,
-                            num_workers=4,
+                            num_workers=args.n_workers,
                             pin_memory=False)
 
     # forward samples to the model and obtain results
-    features, scores = forward_videos(model, dataloader, use_cuda)
+    features, probs = forward_videos(model, dataloader, use_cuda)
 
     # save the outputs as .npy
     args.save_path.mkdir(parents=True, exist_ok=True)

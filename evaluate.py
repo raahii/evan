@@ -54,7 +54,7 @@ def main():
         features2 = load_npy(dir2, data_type, args.n_samples)
         score = compute_prd_from_embedding(features1, features2)
 
-    print(f"{args.metric}: {score}")
+    print(score)
 
 if __name__=="__main__":
     main()

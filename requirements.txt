@@ -1,4 +1,4 @@
 torch
 scikit-video
 opencv-python
-inflection
+scikit-learn
