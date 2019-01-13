@@ -1,7 +1,6 @@
 import sys, time
 import argparse
 from pathlib import Path
-import inflection
 from tqdm import tqdm
 
 import torch

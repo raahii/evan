@@ -4,5 +4,5 @@ __pycache__
 notebooks
 
 models/weights/*
-results/*
+result/*
 !.gitkeep

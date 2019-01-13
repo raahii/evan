@@ -40,6 +40,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import matplotlib
+matplotlib.use("Agg")
+
 from matplotlib import pyplot as plt
 import numpy as np
 import sklearn.cluster
@@ -306,8 +309,5 @@ def plot(precision_recall_pairs, labels=None, out_path=None,
   plt.xlabel('Recall', fontsize=12)
   plt.ylabel('Precision', fontsize=12)
   plt.tight_layout()
-  if out_path is None:
-    plt.show()
-  else:
-    plt.savefig(out_path, bbox_inches='tight', dpi=dpi)
-    plt.close()
+  plt.savefig(out_path, bbox_inches='tight', dpi=dpi)
+  plt.close()
