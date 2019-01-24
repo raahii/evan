@@ -69,7 +69,7 @@ def main():
         dir1, dir2 = args.result_dir[:2]
         features1 = load_npy(dir1, data_type, args.n_samples)
         features2 = load_npy(dir2, data_type, args.n_samples)
-        score = compute_prd_from_embedding(features1, features2)
+        score = compute_prd_from_embedding(features2, features1)
         score = {
                     "recall": score[0].tolist(),
                     "precision": score[1].tolist(),

@@ -13,7 +13,7 @@ These codes are useful for evaluating GANs for video generation. In order to mak
 
     
 
-2. Perform evaluation! Various metrics for GANs are available.
+2. Perform evaluation. Various metrics for GANs are available.
 
    - [x] Inception Score [1]
    - [x] Frechet Inception Distace [2]
@@ -74,7 +74,7 @@ python compute_conv_features.py --batchsize <batchsize> <video directory> <outpu
   For example, the `Inception Score` can be calculated from a single set of video samples, and can be performed as follows:
 
 ```shell
-python evaluation.py is <input directory>
+python evaluate.py is <input directory>
 ```
 
 
@@ -82,11 +82,11 @@ python evaluation.py is <input directory>
   Other metrics, such as the `Frechet Inception Distance` and `Precision and Recall for Distributions`, are calculated using a pair of dataset samples and generated samples, and can be performed as follows:.
 
 ```shell
-python evaluation.py fid -o result.json <dataset directory1> <generated directory2>
+python evaluate.py fid -o result.json <dataset directory1> <generated directory2>
 ```
 
 ```
-python evaluation.py prd -o result.json <dataset directory1> <generated directory2>
+python evaluate.py prd -o result.json <dataset directory1> <generated directory2>
 ```
 
 
