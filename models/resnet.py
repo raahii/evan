@@ -1,24 +1,35 @@
+import math
+from functools import partial
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-import math
-from functools import partial
 
-__all__ = ['ResNet', 'resnet10', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnet200']
+__all__ = [
+    "ResNet",
+    "resnet10",
+    "resnet18",
+    "resnet34",
+    "resnet50",
+    "resnet101",
+    "resnet152",
+    "resnet200",
+]
 
 
 def conv3x3x3(in_planes, out_planes, stride=1):
     # 3x3x3 convolution with padding
-    return nn.Conv3d(in_planes, out_planes, kernel_size=3,
-                     stride=stride, padding=1, bias=False)
+    return nn.Conv3d(
+        in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
+    )
 
 
 def downsample_basic_block(x, planes, stride):
     out = F.avg_pool3d(x, kernel_size=1, stride=stride)
-    zero_pads = torch.Tensor(out.size(0), planes - out.size(1),
-                             out.size(2), out.size(3),
-                             out.size(4)).zero_()
+    zero_pads = torch.Tensor(
+        out.size(0), planes - out.size(1), out.size(2), out.size(3), out.size(4)
+    ).zero_()
     if out.is_cuda:
         zero_pads = zero_pads.cuda()
 
@@ -66,8 +77,9 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv3d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm3d(planes)
-        self.conv2 = nn.Conv3d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv3d(
+            planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
+        )
         self.bn2 = nn.BatchNorm3d(planes)
         self.conv3 = nn.Conv3d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm3d(planes * 4)
@@ -99,12 +111,20 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-
-    def __init__(self, block, layers, sample_size, sample_duration, shortcut_type='B', num_classes=400):
+    def __init__(
+        self,
+        block,
+        layers,
+        sample_size,
+        sample_duration,
+        shortcut_type="B",
+        num_classes=400,
+    ):
         self.inplanes = 64
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv3d(3, 64, kernel_size=7, stride=(1, 2, 2),
-                               padding=(3, 3, 3), bias=False)
+        self.conv1 = nn.Conv3d(
+            3, 64, kernel_size=7, stride=(1, 2, 2), padding=(3, 3, 3), bias=False
+        )
         self.bn1 = nn.BatchNorm3d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool3d(kernel_size=(3, 3, 3), stride=2, padding=1)
@@ -120,7 +140,7 @@ class ResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
             elif isinstance(m, nn.BatchNorm3d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -128,15 +148,22 @@ class ResNet(nn.Module):
     def _make_layer(self, block, planes, blocks, shortcut_type, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
-            if shortcut_type == 'A':
-                downsample = partial(downsample_basic_block,
-                                     planes=planes * block.expansion,
-                                     stride=stride)
+            if shortcut_type == "A":
+                downsample = partial(
+                    downsample_basic_block,
+                    planes=planes * block.expansion,
+                    stride=stride,
+                )
             else:
                 downsample = nn.Sequential(
-                    nn.Conv3d(self.inplanes, planes * block.expansion,
-                              kernel_size=1, stride=stride, bias=False),
-                    nn.BatchNorm3d(planes * block.expansion)
+                    nn.Conv3d(
+                        self.inplanes,
+                        planes * block.expansion,
+                        kernel_size=1,
+                        stride=stride,
+                        bias=False,
+                    ),
+                    nn.BatchNorm3d(planes * block.expansion),
                 )
 
         layers = []
@@ -171,17 +198,17 @@ def get_fine_tuning_parameters(model, ft_begin_index):
 
     ft_module_names = []
     for i in range(ft_begin_index, 5):
-        ft_module_names.append('layer{}'.format(ft_begin_index))
-    ft_module_names.append('fc')
+        ft_module_names.append("layer{}".format(ft_begin_index))
+    ft_module_names.append("fc")
 
     parameters = []
     for k, v in model.named_parameters():
         for ft_module in ft_module_names:
             if ft_module in k:
-                parameters.append({'params': v})
+                parameters.append({"params": v})
                 break
         else:
-            parameters.append({'params': v, 'lr': 0.0})
+            parameters.append({"params": v, "lr": 0.0})
 
     return parameters
 
@@ -192,11 +219,13 @@ def resnet10(**kwargs):
     model = ResNet(BasicBlock, [1, 1, 1, 1], **kwargs)
     return model
 
+
 def resnet18(**kwargs):
     """Constructs a ResNet-18 model.
     """
     model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
     return model
+
 
 def resnet34(**kwargs):
     """Constructs a ResNet-34 model.
@@ -204,11 +233,13 @@ def resnet34(**kwargs):
     model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
     return model
 
+
 def resnet50(**kwargs):
     """Constructs a ResNet-50 model.
     """
     model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
     return model
+
 
 def resnet101(**kwargs):
     """Constructs a ResNet-101 model.
@@ -216,11 +247,13 @@ def resnet101(**kwargs):
     model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
     return model
 
+
 def resnet152(**kwargs):
     """Constructs a ResNet-101 model.
     """
     model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
     return model
+
 
 def resnet200(**kwargs):
     """Constructs a ResNet-101 model.
