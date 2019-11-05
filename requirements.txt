@@ -2,3 +2,4 @@ torch
 scikit-video
 opencv-python
 scikit-learn
+matplotlib

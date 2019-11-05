@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
-from metrics.precision_recall_distributions import plot as plot_prd
+from .metrics.precision_recall_distributions import plot as plot_prd
 
 
 def main():
