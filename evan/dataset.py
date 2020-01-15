@@ -1,3 +1,5 @@
+import time
+
 import cv2
 import numpy as np
 import skvideo.io
@@ -51,14 +53,14 @@ def temporal_center_crop(video, length):
     return video[start : start + length]
 
 
-class VideoDataet(Dataset):
+class VideoDataset(Dataset):
     length = 16
     size = 112
     mean = [114.7748, 107.7354, 99.4750]
     std = [1, 1, 1]
 
     def __init__(self, root_path):
-        self.video_paths = list(root_path.glob("**/*.mp4"))
+        self.video_paths = list(root_path.glob("*.mp4"))
 
     def __len__(self):
         return len(self.video_paths)
@@ -82,4 +84,4 @@ class VideoDataet(Dataset):
         # (T, H, W, C) -> (C, T, H, W)
         video = video.transpose(3, 0, 1, 2)
 
-        return video
+        return video.astype(np.float32)

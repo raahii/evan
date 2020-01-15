@@ -10,50 +10,47 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from .dataset import VideoDataet
+from .dataset import VideoDataset
 from .models import resnet
 
 root_path = Path(__file__).parent.resolve()
 default_weight_path = root_path / "models/weights/resnet-101-kinetics-ucf101_split1.pth"
 
 
-def prepare_inception_model(weight_path, use_cuda):
+def prepare_inception_model(weight_path, device):
     model = resnet.resnet101(
         num_classes=101, shortcut_type="B", sample_size=112, sample_duration=16
     )
 
-    if use_cuda:
-        model.cuda()
-        model_data = torch.load(weight_path)
-    else:
-        model_data = torch.load(weight_path, map_location="cpu")
-
+    model_data = torch.load(weight_path, map_location="cpu")
     fixed_model_data = OrderedDict()
     for key, value in model_data["state_dict"].items():
         new_key = key.replace("module.", "")
         fixed_model_data[new_key] = value
 
     model.load_state_dict(fixed_model_data)
+    model = model.to(device)
     model.eval()
 
     return model
 
 
-def forward_videos(model, dataloader, use_cuda):
+def forward_videos(model, dataloader, device, verbose=False):
     softmax = torch.nn.Softmax(dim=1)
     features, probs = [], []
     with torch.no_grad():
         for videos in tqdm(
-            iter(dataloader), "fowarding video samples to the inception model..."
+            iter(dataloader),
+            "fowarding video samples to the inception model...",
+            disable=not verbose,
         ):
             # foward samples
-            videos = videos.cuda() if use_cuda else videos
-            inputs = Variable(videos.float())
-            _features, _probs = model(inputs)
+            videos = videos.to(device)
+            _features, _probs = model(videos)
 
             # to cpu
-            _features = _features.data.cpu().numpy()
-            _probs = softmax(_probs).data.cpu().numpy()
+            _features = _features.cpu().numpy()
+            _probs = softmax(_probs).cpu().numpy()
 
             # add results
             features.append(_features)
@@ -65,21 +62,25 @@ def forward_videos(model, dataloader, use_cuda):
     return features, probs
 
 
-def convert(batchsize, result_dir, weight=default_weight_path, n_workers=8):
-    use_cuda = torch.cuda.is_available()
+def convert(
+    batchsize, result_dir, weight=default_weight_path, n_workers=2, verbose=False
+):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # init model and load pretrained weights
-    model = prepare_inception_model(str(weight), use_cuda)
+    model = prepare_inception_model(str(weight), device)
 
     # load generated samples as pytorch dataset
-    dataset = VideoDataet(result_dir)
-    print(f"{len(dataset)} samples found!")
+    dataset = VideoDataset(result_dir)
+    # print(f"{len(dataset)} samples found!")
     dataloader = DataLoader(
-        dataset, batch_size=batchsize, num_workers=n_workers, pin_memory=False
+        dataset, batch_size=batchsize, num_workers=n_workers, pin_memory=True
     )
 
     # forward samples to the model and obtain results
-    features, probs = forward_videos(model, dataloader, use_cuda)
+    features, probs = forward_videos(model, dataloader, device, verbose)
+
+    del model
 
     return features, probs
 
@@ -101,7 +102,7 @@ def main():
     args = parser.parse_args()
 
     features, probs = convert(
-        args.batchsize, args.weight, args.result_dir, args.n_workers
+        args.batchsize, args.result_dir, args.weight, args.n_workers
     )
     save(features, probs, args.save_path)
 
