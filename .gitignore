@@ -1,8 +1,13 @@
 .python-version
 __pycache__
 *.pyc
-notebooks
+*.pyx
+evan.egg-info
+build/
+dist
 
-models/weights/*
-result/*
+notebooks
+evan/models/weights/*
 !.gitkeep
+result
+figs
