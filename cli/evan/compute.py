@@ -66,7 +66,10 @@ def create_conv_features(videos_path: Path):
     np.save(str(videos_path / "probs"), probs)
 
 
-def inception_score(gen_dir: Path, n_samples: int):
+def inception_score(args):
+    gen_dir = args.gen_dir.resolve()
+    n_samples = args.n_sampels
+
     if not (gen_dir / "probs.npy").exists():
         create_conv_features(gen_dir)
 
@@ -84,7 +87,11 @@ def inception_score(gen_dir: Path, n_samples: int):
     pretty_json(result)
 
 
-def frechet_distance(gen_dir: Path, ref_dir: Path, n_samples: int):
+def frechet_distance(args):
+    gen_dir = args.gen_dir.resolve()
+    ref_dir = args.ref_dir.resolve()
+    n_samples = args.n_samples
+
     if not (gen_dir / "features.npy").exists():
         create_conv_features(gen_dir)
 
@@ -108,7 +115,11 @@ def frechet_distance(gen_dir: Path, ref_dir: Path, n_samples: int):
     pretty_json(result)
 
 
-def precision_recall(gen_dir: Path, ref_dir: Path, n_samples: int):
+def precision_recall(args):
+    gen_dir = args.gen_dir.resolve()
+    ref_dir = args.ref_dir.resolve()
+    n_samples = args.n_samples
+
     if not (gen_dir / "features.npy").exists():
         create_conv_features(gen_dir)
 
@@ -131,107 +142,3 @@ def precision_recall(gen_dir: Path, ref_dir: Path, n_samples: int):
     }
 
     pretty_json(result)
-
-
-def do_compute_command(argv: List[str]) -> None:
-    p = argparse.ArgumentParser(
-        add_help=False,
-        description="calculate evaluation score. please specify metric name",
-        prog="evan compute",
-    )
-    p.add_argument(
-        "-m",
-        "--metric",
-        type=str,
-        choices=["inception-score", "frechet-distance", "precision-recall"],
-        required=True,
-        help="evaluation metric name",
-    )
-    args, rest_args = p.parse_known_args(argv)
-
-    if args.metric == "inception-score":
-        _p = argparse.ArgumentParser(
-            description="calculate Inception Score",
-            prog=f"evan compute -m {args.metric}",
-        )
-        _p.add_argument(
-            "-g",
-            "--gen-dir",
-            type=Path,
-            required=True,
-            help="directory which contains generated videos by your model",
-        )
-        _p.add_argument(
-            "-n",
-            "--n_samples",
-            type=int,
-            default=-1,
-            help="number of samples to use for evaluation. Use all samples by default",
-        )
-        params, _ = _p.parse_known_args(argv)
-        inception_score(params.gen_dir.resolve(), params.n_samples)
-
-    elif args.metric == "frechet-distance":
-        _p = argparse.ArgumentParser(
-            description="calculate Frechet Inception Distance",
-            prog=f"evan compute -m {args.metric}",
-        )
-        _p.add_argument(
-            "-g",
-            "--gen-dir",
-            type=Path,
-            required=True,
-            help="directory which contains generated videos by your model",
-        )
-        _p.add_argument(
-            "-r",
-            "--ref-dir",
-            type=Path,
-            required=True,
-            help="directory path which contains reference videos to train your model",
-        )
-        _p.add_argument(
-            "-n",
-            "--n_samples",
-            type=int,
-            default=-1,
-            help="number of samples to use for evaluation. Use all samples by default",
-        )
-        params = _p.parse_args(argv)
-
-        frechet_distance(
-            params.gen_dir.resolve(), params.ref_dir.resolve(), params.n_samples
-        )
-
-    elif args.metric == "precision-recall":
-        _p = argparse.ArgumentParser(
-            description="calculate Precision and Recall for Distributions",
-            prog=f"evan compute -m {args.metric}",
-        )
-        _p.add_argument(
-            "-g",
-            "--gen-dir",
-            type=Path,
-            required=True,
-            help="directory which contains generated videos by your model.",
-        )
-        _p.add_argument(
-            "-r",
-            "--ref-dir",
-            type=Path,
-            required=True,
-            help="directory path which contains reference videos to train your model.",
-        )
-        _p.add_argument(
-            "-n",
-            "--n_samples",
-            type=int,
-            default=-1,
-            help="number of samples to use for evaluation. Use all samples by default.",
-        )
-        params, _ = _p.parse_known_args(argv)
-        precision_recall(
-            params.gen_dir.resolve(), params.ref_dir.resolve(), params.n_samples
-        )
-    else:
-        raise NotImplementedError
