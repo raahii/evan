@@ -33,19 +33,22 @@ def compute_inception_score(
         np.save(str(gen_dir / "features"), features)
         np.save(str(gen_dir / "probs"), probs)
 
-    print(f">> computing score using '{str(gen_dir / 'probs.npy')}'...")
+    print(">> computing IS...")
+    print(f"     generated samples: '{str(gen_dir / 'probs.npy')}'")
     probs = load_npy(gen_dir / "probs.npy", n_samples)
     score = compute_is(probs)
 
     return score
 
 
-def compute_frechet_distance(_gen_dir, _ref_dir: str, n_samples: int = -1):
+def compute_frechet_distance(
+    _gen_dir, _ref_dir: str, n_samples: int = -1, verbose: bool = False
+):
     gen_dir: Path = Path(_gen_dir)
     if (gen_dir / "features.npy").exists():
         features_gen = load_npy(gen_dir / "features.npy", n_samples)
     else:
-        features_gen, probs_gen = create_conv_features(gen_dir)
+        features_gen, probs_gen = create_conv_features(gen_dir, verbose=verbose)
         np.save(str(gen_dir / "features"), features_gen)
         np.save(str(gen_dir / "probs"), probs_gen)
 
@@ -53,12 +56,13 @@ def compute_frechet_distance(_gen_dir, _ref_dir: str, n_samples: int = -1):
     if (ref_dir / "features.npy").exists():
         features_ref = load_npy(ref_dir / "features.npy", n_samples)
     else:
-        features_ref, probs_ref = create_conv_features(ref_dir)
+        features_ref, probs_ref = create_conv_features(ref_dir, verbose=verbose)
         np.save(str(ref_dir / "features"), features_ref)
         np.save(str(ref_dir / "probs"), probs_ref)
 
-    print(f"using {str(gen_dir / 'features.npy')} as generated samples...")
-    print(f"using {str(ref_dir / 'features.npy')} as referece samples...")
+    print(">> computing FID...")
+    print(f"     dataset samples: {str(ref_dir / 'features.npy')}")
+    print(f"     generated samples: {str(gen_dir / 'features.npy')}")
     score = compute_fid(features_ref, features_gen)
 
     return float(score)

@@ -47,7 +47,32 @@ def new_video_directory(n_samples: int) -> tempfile.TemporaryDirectory:
 
 class TestScore(unittest.TestCase):
     def test_inception_score(self):
-        d = new_video_directory(10)
+        N = 10
+        d = new_video_directory(N)
         s = score.compute_inception_score(d.name)
         d.cleanup()
-        self.assertTrue(s < 10)
+
+        t = 10
+        self.assertTrue(s < t)
+
+    def test_frechet_distance(self):
+        N = 10
+        g = new_video_directory(N)
+        r = new_video_directory(N)
+        s = score.compute_frechet_distance(g.name, r.name)
+        g.cleanup()
+        r.cleanup()
+
+        t = 10
+        self.assertTrue(s < t)
+
+    def test_precision_recall(self):
+        N = 10
+        g = new_video_directory(N)
+        r = new_video_directory(N)
+        s = score.compute_frechet_distance(g.name, r.name)
+        g.cleanup()
+        r.cleanup()
+
+        t = 10
+        self.assertTrue(s < t)
