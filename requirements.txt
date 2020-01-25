@@ -1,5 +1,10 @@
+requests
+googledrivedownloader
+tqdm
+
 torch
 scikit-video
 opencv-python
 scikit-learn
 matplotlib
+numpy
