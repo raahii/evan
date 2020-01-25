@@ -1,15 +1,12 @@
-import argparse
-import sys
-import time
+import multiprocessing
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import requests
 import torch
 from google_drive_downloader import GoogleDriveDownloader as gdd
-from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -30,7 +27,7 @@ def prepare_inception_model(weight_dir: Path, device: torch.device):
     filename = "resnet-101-kinetics-ucf101_split1.pth"
     weight_path = weight_dir / filename
     if not weight_path.exists():
-        print("download trained model...")
+        print(">> download trained model...")
         file_id = "1ACPeH9prQ7yBvb2d8QsW2kt4WNgb9JId"
         gdd.download_file_from_google_drive(file_id=file_id, dest_path=weight_path)
 
@@ -82,15 +79,18 @@ def create_conv_features(
 
     # load generated samples as pytorch dataset
     dataset = VideoDataset(videos_path)
-    print(f">> found {len(dataset)} samples.")
+    nprocs = multiprocessing.cpu_count()
+    if verbose:
+        print(f">> found {len(dataset)} samples.")
     dataloader = DataLoader(
-        dataset, batch_size=batchsize, num_workers=0, pin_memory=True
+        dataset, batch_size=batchsize, num_workers=nprocs, pin_memory=True
     )
 
     # forward samples to the model and obtain results
-    print(
-        f">> converting videos into conv features using inception model (on {device})..."
-    )
+    if verbose:
+        print(
+            f">> converting videos into conv features using inception model (on {device})..."
+        )
     features, probs = forward_videos(model, dataloader, device, verbose)
 
     del model
