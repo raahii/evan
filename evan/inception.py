@@ -3,7 +3,7 @@ import sys
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 import numpy as np
 import requests
@@ -13,6 +13,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from .config import CACHE_DIR
 from .dataset import VideoDataset
 from .models import resnet
 
@@ -23,26 +24,6 @@ def _get_confirm_token(response: requests.Response) -> Optional[str]:
             return value
 
     return None
-
-
-def download_model(file_id: str, path: Path):
-    URL = "https://docs.google.com/uc?export=download"
-
-    session = requests.Session()
-    response = session.get(URL, params={"id": id}, stream=True)
-    token = _get_confirm_token(response)
-
-    if token:
-        params = {"id": id, "confirm": token}
-        response = session.get(URL, params=params, stream=True)
-
-    CHUNK_SIZE = 32768
-
-    f = open(path, "wb")
-    for chunk in response.iter_content(CHUNK_SIZE):
-        if chunk:
-            f.write(chunk)
-    f.close()
 
 
 def prepare_inception_model(weight_dir: Path, device: torch.device):
@@ -70,7 +51,9 @@ def prepare_inception_model(weight_dir: Path, device: torch.device):
     return model
 
 
-def forward_videos(model, dataloader, device, verbose=False):
+def forward_videos(
+    model, dataloader, device, verbose=False
+) -> Tuple[np.ndarray, np.ndarray]:
     softmax = torch.nn.Softmax(dim=1)
     features, probs = [], []
     with torch.no_grad():
@@ -87,35 +70,27 @@ def forward_videos(model, dataloader, device, verbose=False):
             features.append(_features)
             probs.append(_probs)
 
-    features = np.concatenate(features, axis=0)
-    probs = np.concatenate(probs, axis=0)
-
-    return features, probs
+    return np.concatenate(features, axis=0), np.concatenate(probs, axis=0)
 
 
-def convert(batchsize, result_dir, n_workers=0, verbose=False):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+def create_conv_features(
+    videos_path: Path, batchsize=10
+) -> Tuple[np.ndarray, np.ndarray]:
     # init model and load pretrained weights
-    model = prepare_inception_model(device)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = prepare_inception_model(CACHE_DIR, device)
 
     # load generated samples as pytorch dataset
-    dataset = VideoDataset(result_dir)
-    # print(f"{len(dataset)} samples found!")
+    dataset = VideoDataset(videos_path)
+    print(f"found {len(dataset)} samples.")
     dataloader = DataLoader(
-        dataset, batch_size=batchsize, num_workers=n_workers, pin_memory=True
+        dataset, batch_size=batchsize, num_workers=0, pin_memory=True
     )
 
     # forward samples to the model and obtain results
-    features, probs = forward_videos(model, dataloader, device, verbose)
+    print(f"convert videos into conv features using inception model (on {device})...")
+    features, probs = forward_videos(model, dataloader, device, True)
 
     del model
 
     return features, probs
-
-
-def save(features, probs, save_path):
-    # save the outputs as .npy
-    save_path.mkdir(parents=True, exist_ok=True)
-    np.save(str(save_path / "features"), features)
-    np.save(str(save_path / "probs"), probs)
