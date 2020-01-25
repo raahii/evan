@@ -1,3 +1,10 @@
+<div align="center">
+  <img width="150" src="https://user-images.githubusercontent.com/13511520/73122492-fa165c80-3fc8-11ea-859b-dab5fa02894f.png" />
+</div>
+<p align="center">
+  Library and CLI tool for evaluating video GANs
+</p>
+
 "Evan" is a CLI tool (and python package) for evaluating video GANs.  You can calculates some famous evaluation metrics such as Incetion Score without preparing Incetion Model, codes for the metric.
 
 <p align="center">
