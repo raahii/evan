@@ -15,7 +15,7 @@ from evan.metrics.inception_score import compute_is
 from evan.metrics.precision_recall_distributions import \
     compute_prd_from_embedding
 
-from .config import EVAN_CACHE_DIR
+from .config import CACHE_DIR
 
 
 def load_npy(path: Union[str, Path], n: int) -> np.ndarray:
@@ -47,7 +47,7 @@ def create_conv_features(videos_path: Path):
 
     # init model and load pretrained weights
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = prepare_inception_model(EVAN_CACHE_DIR, device)
+    model = prepare_inception_model(CACHE_DIR, device)
 
     # load generated samples as pytorch dataset
     dataset = VideoDataset(videos_path)

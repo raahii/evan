@@ -1,3 +1,3 @@
 from pathlib import Path
 
-EVAN_CACHE_DIR = Path.home() / ".evan"
+CACHE_DIR = Path.home() / ".evan"

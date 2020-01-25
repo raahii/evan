@@ -9,8 +9,9 @@ setup(
     description="Evaluation framework for GANs for video generation",
     author="raahii",
     url="https://github.com/raahii/video-gans-evaluation",
-    packages=find_packages(exclude=('tests', 'docs'))
+    packages=find_packages(exclude=("tests", "docs")),
     install_requires=install_requirements,
     entry_points={"console_scripts": ["evan=cli.evan.main:main"]},
     python_requires=">=3.4",
+    test_suite="tests",
 )

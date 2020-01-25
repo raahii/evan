@@ -74,7 +74,7 @@ def forward_videos(
 
 
 def create_conv_features(
-    videos_path: Path, batchsize=10
+    videos_path: Path, batchsize: int = 10, verbose: bool = False
 ) -> Tuple[np.ndarray, np.ndarray]:
     # init model and load pretrained weights
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -82,14 +82,16 @@ def create_conv_features(
 
     # load generated samples as pytorch dataset
     dataset = VideoDataset(videos_path)
-    print(f"found {len(dataset)} samples.")
+    print(f">> found {len(dataset)} samples.")
     dataloader = DataLoader(
         dataset, batch_size=batchsize, num_workers=0, pin_memory=True
     )
 
     # forward samples to the model and obtain results
-    print(f"convert videos into conv features using inception model (on {device})...")
-    features, probs = forward_videos(model, dataloader, device, True)
+    print(
+        f">> converting videos into conv features using inception model (on {device})..."
+    )
+    features, probs = forward_videos(model, dataloader, device, verbose)
 
     del model
 

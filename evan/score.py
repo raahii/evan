@@ -9,6 +9,7 @@ from .dataset import VideoDataset
 from .inception import create_conv_features
 from .metrics.frechet_distance import compute_fid
 from .metrics.inception_score import compute_is
+from .metrics.precision_recall_distributions import compute_prd_from_embedding
 
 
 def load_npy(path: Union[str, Path], n: int) -> np.ndarray:
@@ -42,7 +43,7 @@ def compute_inception_score(
 
 
 def compute_frechet_distance(
-    _gen_dir, _ref_dir: str, n_samples: int = -1, verbose: bool = False
+    _gen_dir: str, _ref_dir: str, n_samples: int = -1, verbose: bool = False
 ):
     gen_dir: Path = Path(_gen_dir)
     if (gen_dir / "features.npy").exists():
@@ -61,19 +62,21 @@ def compute_frechet_distance(
         np.save(str(ref_dir / "probs"), probs_ref)
 
     print(">> computing FID...")
-    print(f"     dataset samples: {str(ref_dir / 'features.npy')}")
     print(f"     generated samples: {str(gen_dir / 'features.npy')}")
+    print(f"     dataset samples: {str(ref_dir / 'features.npy')}")
     score = compute_fid(features_ref, features_gen)
 
     return float(score)
 
 
-def compute_precision_recall(_gen_dir, _ref_dir: str, n_samples: int = -1):
+def compute_precision_recall(
+    _gen_dir: str, _ref_dir: str, n_samples: int = -1, verbose: bool = False
+):
     gen_dir: Path = Path(_gen_dir)
     if (gen_dir / "features.npy").exists():
         features_gen = load_npy(gen_dir / "features.npy", n_samples)
     else:
-        features_gen, probs_gen = create_conv_features(gen_dir)
+        features_gen, probs_gen = create_conv_features(gen_dir, verbose=verbose)
         np.save(str(gen_dir / "features"), features_gen)
         np.save(str(gen_dir / "probs"), probs_gen)
 
@@ -81,12 +84,13 @@ def compute_precision_recall(_gen_dir, _ref_dir: str, n_samples: int = -1):
     if (ref_dir / "features.npy").exists():
         features_ref = load_npy(ref_dir / "features.npy", n_samples)
     else:
-        features_ref, probs_ref = create_conv_features(ref_dir)
+        features_ref, probs_ref = create_conv_features(ref_dir, verbose=verbose)
         np.save(str(ref_dir / "features"), features_ref)
         np.save(str(ref_dir / "probs"), probs_ref)
 
-    print(f"using {str(gen_dir / 'features.npy')} as generated samples...")
-    print(f"using {str(ref_dir / 'features.npy')} as referece samples...")
-    score = compute_precision_recall(features_ref, features_gen)
+    print(">> computing PRD...")
+    print(f"     generated samples: {str(gen_dir / 'features.npy')}")
+    print(f"     dataset samples: {str(ref_dir / 'features.npy')}")
+    score = compute_prd_from_embedding(features_ref, features_gen)
 
     return {"recall": score[0].tolist(), "precision": score[1].tolist()}
