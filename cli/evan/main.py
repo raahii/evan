@@ -1,9 +1,7 @@
 import argparse
-import sys
 from pathlib import Path
 
 from . import compute, plot
-from .config import EVAN_CACHE_DIR
 
 
 def add_compute_commands(parser: argparse.ArgumentParser) -> None:
@@ -106,9 +104,6 @@ def add_plot_commands(parser: argparse.ArgumentParser) -> None:
 
 
 def main():
-    if not EVAN_CACHE_DIR.exists():
-        EVAN_CACHE_DIR.mkdir(parents=True)
-
     parser = argparse.ArgumentParser(
         #         usage="""evan <command> <metric> ...
         #

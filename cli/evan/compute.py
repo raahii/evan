@@ -1,8 +1,6 @@
-import argparse
 import json
-import sys
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Union
 
 import numpy as np
 import torch
@@ -14,8 +12,6 @@ from evan.metrics.frechet_distance import compute_fid
 from evan.metrics.inception_score import compute_is
 from evan.metrics.precision_recall_distributions import \
     compute_prd_from_embedding
-
-from .config import CACHE_DIR
 
 
 def load_npy(path: Union[str, Path], n: int) -> np.ndarray:
@@ -47,7 +43,7 @@ def create_conv_features(videos_path: Path):
 
     # init model and load pretrained weights
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = prepare_inception_model(CACHE_DIR, device)
+    model = prepare_inception_model(device)
 
     # load generated samples as pytorch dataset
     dataset = VideoDataset(videos_path)
@@ -68,7 +64,7 @@ def create_conv_features(videos_path: Path):
 
 def inception_score(args):
     gen_dir = args.gen_dir.resolve()
-    n_samples = args.n_sampels
+    n_samples = args.n_samples
 
     if not (gen_dir / "probs.npy").exists():
         create_conv_features(gen_dir)
