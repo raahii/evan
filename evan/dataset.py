@@ -1,5 +1,3 @@
-import time
-
 import cv2
 import numpy as np
 import skvideo.io
@@ -16,7 +14,7 @@ def scale(video, size):
     else:
         oh, ow = size, int(size * w / h)
 
-    return np.stack([cv2.resize(img, (oh, ow)) for img in video[..., ::-1]])
+    return np.stack([cv2.resize(img, (oh, ow)) for img in video])
 
 
 def center_crop(video, crop_w, crop_h):
@@ -71,6 +69,7 @@ class VideoDataset(Dataset):
         # read video
         videogen = skvideo.io.vreader(str(path))
         video = np.stack([frame for frame in videogen])
+        video = video[..., ::-1]
 
         # spatial transforms
         video = scale(video, self.size)

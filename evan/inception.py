@@ -23,7 +23,9 @@ def _get_confirm_token(response: requests.Response) -> Optional[str]:
     return None
 
 
-def prepare_inception_model(weight_dir: Path, device: torch.device):
+def prepare_inception_model(
+    device: torch.device = torch.device("cpu"), weight_dir: Path = CACHE_DIR
+):
     filename = "resnet-101-kinetics-ucf101_split1.pth"
     weight_path = weight_dir / filename
     if not weight_path.exists():
@@ -75,7 +77,7 @@ def create_conv_features(
 ) -> Tuple[np.ndarray, np.ndarray]:
     # init model and load pretrained weights
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = prepare_inception_model(CACHE_DIR, device)
+    model = prepare_inception_model(device)
 
     # load generated samples as pytorch dataset
     dataset = VideoDataset(videos_path)
