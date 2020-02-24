@@ -101,7 +101,6 @@ class TestScore(unittest.TestCase):
         r.cleanup()
 
         t = 10
-        print(s)
         self.assertTrue(s < t)
 
     # def test_precision_recall(self):

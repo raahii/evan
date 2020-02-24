@@ -2,7 +2,7 @@ requests
 googledrivedownloader
 tqdm 
 
-torch==1.2.0
+torch>=1.2.0
 scikit-video
 opencv-python
 scikit-learn

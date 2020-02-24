@@ -31,7 +31,7 @@ class TestInception(unittest.TestCase):
     def test_preapre_inception_model(self):
         temp_dir = tempfile.TemporaryDirectory()
         model = inception.prepare_inception_model(
-            Path(temp_dir.name), torch.device("cpu")
+            torch.device("cpu"), Path(temp_dir.name)
         )
 
         filename = "resnet-101-kinetics-ucf101_split1.pth"

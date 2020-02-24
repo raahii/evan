@@ -5,18 +5,21 @@
   Library and CLI tool for evaluating video GANs
 </p>
 
-![build](https://github.com/raahii/evan/workflows/test/badge.svg)
+<p align="center">
+  <img alt="build" src="https://github.com/raahii/evan/workflows/test/badge.svg">
+</p>
 
 
 
-"Evan" automates GAN evaluation flow for video generation. The library gives two advantages for you.
+
+"Evan" automates GAN evaluation for video generation. The library gives two advantages for you.
 
 1. You don't need to **prepare the Inception Model and process your samples for evaluation**.
 2. You don't need to **find source codes or write algorithm of each GAN metric**.
 
 
 
-Evan supports following metrics now.
+Now, evan supports following metrics.
 
 -  Inception Score [1]
 -  Frechet Inception Distace [2]
@@ -32,7 +35,7 @@ Required
 - [FFmpeg](https://github.com/adaptlearning/adapt_authoring/wiki/Installing-FFmpeg)
 
 ```
-pip install evan
+$ pip install evan
 ```
 
 
