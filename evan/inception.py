@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from .config import CACHE_DIR
 from .dataset import VideoDataset
-from .models import resnet
+from .models import resnext
 
 
 def _get_confirm_token(response: requests.Response) -> Optional[str]:
@@ -26,16 +26,14 @@ def _get_confirm_token(response: requests.Response) -> Optional[str]:
 def prepare_inception_model(
     device: torch.device = torch.device("cpu"), weight_dir: Path = CACHE_DIR
 ):
-    filename = "resnet-101-kinetics-ucf101_split1.pth"
+    filename = "resnext-101-kinetics-ucf101_split1.pth"
     weight_path = weight_dir / filename
     if not weight_path.exists():
         print(">> download trained model...")
-        file_id = "1ACPeH9prQ7yBvb2d8QsW2kt4WNgb9JId"
+        file_id = "1DmI6QBrh7xhme0jOL-3nEutJzesHZTqp"
         gdd.download_file_from_google_drive(file_id=file_id, dest_path=weight_path)
 
-    model = resnet.resnet101(
-        num_classes=101, shortcut_type="B", sample_size=112, sample_duration=16
-    )
+    model = resnext.resnet101(num_classes=101, sample_size=112, sample_duration=16)
 
     model_data = torch.load(str(weight_path), map_location="cpu")
     fixed_model_data = OrderedDict()
